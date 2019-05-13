@@ -1,0 +1,41 @@
+server {
+	listen 80;
+# 使用するドメイン名
+	server_name 10.27.16.164;
+	root /usr/share/nginx/html/;
+	index index.php index.html;
+
+# ここに以降のサンプルディレクティブを追加する
+# 末尾のスラッシュの処理
+	rewrite ^(.+)/$ $1;
+
+# ルートのシステムの定義
+	location / {
+		try_files $uri $uri/ /index.php$is_args$args;
+		}
+ 
+	location ~ ^/index.php$ {
+		include fastcgi_params;
+		# SCRIPT_FILENAMEをオーバーライト
+		fastcgi_param SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+		fastcgi_split_path_info ^(.+\.php)(.+)$;
+		fastcgi_pass unix:/run/php/php7.2-fpm.sock;
+		fastcgi_index index.php;
+	}
+ 
+#　/snipe-itでアクセスできる、サブディレクトリーのブログシステムの定義
+	location ~ ^/snipe-it(/(.+))?$ {
+        root /usr/share/nginx/html/snipe-it/public;
+ 
+        try_files $1 /snipe-it/index.php$is_args$args;
+ 
+        location ~ ^/snipe-it/index.php$ {
+            include fastcgi_params;
+            # パラメーターをオーバーライト
+            fastcgi_param SCRIPT_FILENAME /usr/share/nginx/html/snipe-it/public/index.php;
+            fastcgi_split_path_info ^(.+\.php)(.+)$;
+            fastcgi_pass unix:/run/php/php7.2-fpm.sock;
+            fastcgi_index index.php;
+        }
+    }
+}
